@@ -284,6 +284,28 @@ p{ margin:0; }
   margin-top:16px;
 }
 .counter{ font-size:0.78rem; color:var(--rose-dark); font-weight:700; margin-top:12px; text-align:center; }
+.qty-card .max{ font-size:0.7rem; color:var(--cocoa-soft); margin-top:2px; }
+
+.secondary-btn{
+  width:100%; margin-top:14px;
+  background: var(--white);
+  color: var(--rose-dark);
+  border:2px solid var(--rose);
+  padding:12px;
+  border-radius:14px;
+  font-family:'Quicksand', sans-serif; font-weight:700; font-size:0.92rem;
+  cursor:pointer;
+  transition: background .15s ease;
+}
+.secondary-btn:hover{ background: var(--blush); }
+.secondary-btn:disabled{ opacity:0.4; cursor:not-allowed; background:var(--white); }
+
+.skip-link{
+  display:block; width:100%; text-align:center; margin-top:6px;
+  font-size:0.85rem; color:var(--cocoa-soft); font-weight:700; text-decoration:underline;
+  cursor:pointer; background:none; border:none; font-family:'Quicksand', sans-serif;
+}
+.skip-link:hover{ color:var(--rose-dark); }
 
 textarea, input[type="text"], input[type="tel"], input[type="date"], select{
   width:100%;
@@ -325,6 +347,7 @@ label.field:first-child{ margin-top:0; }
   font-family:'Playfair Display', serif;
   font-size:1.2rem; font-weight:700; color:var(--rose-dark);
 }
+.summary-empty{ font-size:0.85rem; color:var(--cocoa-soft); font-style:italic; text-align:center; }
 
 /* Botonera inferior fija */
 .action-bar{
@@ -398,8 +421,10 @@ label.field:first-child{ margin-top:0; }
     <div class="progress-dots" data-progress="1"></div>
     <button class="back-link" onclick="goTo('hero')">← Inicio</button>
     <div class="wizard-head">
-      <h2>Elige tu caja</h2>
+      <h2 id="qtyTitle">Elige tu caja</h2>
     </div>
+    <div class="combo-list" id="cartList"></div>
+    <button class="skip-link" id="skipToCheckout" style="display:none;" onclick="goTo('toppingsExtra')">Ya agregué todas mis cajas → continuar</button>
     <div class="qty-grid" id="qtyGrid"></div>
   </div>
 </section>
@@ -411,7 +436,7 @@ label.field:first-child{ margin-top:0; }
     <button class="back-link" onclick="goTo('qty')">← Atrás</button>
     <div class="wizard-head">
       <h2>Arma tu combinación</h2>
-      <p>Dinos cuántas donas quieres de cada sabor y qué topping le pones a cada una.</p>
+      <p id="comboSubtitle">Dinos cuántas donas quieres de cada sabor y qué topping le pones a cada una.</p>
     </div>
 
     <div class="combo-form">
@@ -434,6 +459,7 @@ label.field:first-child{ margin-top:0; }
 
     <div class="combo-list" id="comboList"></div>
     <div class="counter" id="comboCounter"></div>
+    <button class="secondary-btn" id="addAnotherBoxBtn" onclick="addAnotherBox()" disabled>+ Agregar otra caja a mi pedido</button>
   </div>
 </section>
 
@@ -519,8 +545,8 @@ const TOPPING_EXTRA_PRICE = 1000; // por topping adicional seleccionado (aplica 
 
 /* ================= ESTADO ================= */
 const state = {
-  presentacion: null,
-  combos: [],        // [{ sabor: 'chocolate', topping: 'Maní'|'', cantidad: 4 }, ...]
+  cart: [],                                         // [{ presentacion, combos: [...] }, ...]
+  currentBox: { presentacion: null, combos: [] },    // caja que se está armando ahora mismo
   toppingsExtra: [],
 };
 let comboQty = 1;
@@ -532,9 +558,10 @@ function formatFecha(dateStr){
   const [y,m,d] = dateStr.split("-").map(Number);
   return `${d} de ${MESES[m-1]} de ${y}`;
 }
-function totalAsignado(){ return state.combos.reduce((s,c) => s + c.cantidad, 0); }
-function distinctSabores(){ return new Set(state.combos.map(c => c.sabor)).size; }
-function remaining(){ return state.presentacion ? state.presentacion.cant - totalAsignado() : 0; }
+function totalAsignado(){ return state.currentBox.combos.reduce((s,c) => s + c.cantidad, 0); }
+function distinctSabores(){ return new Set(state.currentBox.combos.map(c => c.sabor)).size; }
+function remaining(){ return state.currentBox.presentacion ? state.currentBox.presentacion.cant - totalAsignado() : 0; }
+function boxComplete(){ return !!state.currentBox.presentacion && totalAsignado() === state.currentBox.presentacion.cant; }
 
 const TOTAL_STEPS = 4;
 
@@ -547,6 +574,8 @@ function goTo(name){
   window.scrollTo(0,0);
   renderProgress(name);
   updateActionBar(name);
+  if (name === "qty") { renderCartUI(); }
+  if (name === "combo") { renderComboIntro(); renderComboList(); updateStepperUI(); updateComboButtons(); }
   if (name === "entrega") { renderZona(); updateSummary(); }
 }
 
@@ -578,12 +607,16 @@ function updateActionBar(name){
 
   if (name === "qty"){
     actionBtn.textContent = "Continuar";
-    actionBtn.disabled = !state.presentacion;
+    actionBtn.disabled = !state.currentBox.presentacion;
     actionBtn.onclick = () => goTo("combo");
   } else if (name === "combo"){
-    actionBtn.textContent = "Continuar";
-    actionBtn.disabled = !state.presentacion || totalAsignado() !== state.presentacion.cant;
-    actionBtn.onclick = () => goTo("toppingsExtra");
+    actionBtn.textContent = "Continuar con el pedido";
+    actionBtn.disabled = !boxComplete();
+    actionBtn.onclick = () => {
+      state.cart.push(state.currentBox);
+      state.currentBox = { presentacion: null, combos: [] };
+      goTo("toppingsExtra");
+    };
   } else if (name === "toppingsExtra"){
     actionBtn.textContent = "Continuar";
     actionBtn.disabled = false;
@@ -605,19 +638,51 @@ PRESENTACIONES.forEach((p) => {
     <div class="n">${p.cant}</div>
     <div class="lbl">donas</div>
     <div class="price">${fmt(p.price)}</div>
+    <div class="max">Máx. ${p.maxSelect} sabores</div>
   `;
   card.querySelector("input").addEventListener("change", () => {
-    state.presentacion = p;
-    state.combos = [];
+    state.currentBox = { presentacion: p, combos: [] };
     comboQty = 1;
     document.querySelectorAll(".qty-card").forEach(c => c.classList.remove("selected"));
     card.classList.add("selected");
-    renderComboList();
-    updateStepperUI();
     updateActionBar("qty");
   });
   qtyGrid.appendChild(card);
 });
+
+function renderCartUI(){
+  document.getElementById("qtyTitle").textContent = state.cart.length > 0 ? "Agrega otra caja a tu pedido" : "Elige tu caja";
+
+  const list = document.getElementById("cartList");
+  list.innerHTML = "";
+  state.cart.forEach((box, i) => {
+    const row = document.createElement("div");
+    row.className = "combo-row";
+    row.innerHTML = `
+      <span class="txt"><b>1</b> caja de ${box.presentacion.cant} donas — ${fmt(box.presentacion.price)}</span>
+      <button class="remove-btn" onclick="removeCartBox(${i})">✕</button>
+    `;
+    list.appendChild(row);
+  });
+
+  document.getElementById("skipToCheckout").style.display = state.cart.length > 0 ? "block" : "none";
+
+  // Reflejar visualmente la caja en progreso (si la hay) al volver a esta pantalla
+  document.querySelectorAll('input[name="qty"]').forEach(r => r.checked = false);
+  document.querySelectorAll(".qty-card").forEach(c => c.classList.remove("selected"));
+  if (state.currentBox.presentacion){
+    const radio = document.querySelector(`input[name="qty"][value="${state.currentBox.presentacion.cant}"]`);
+    if (radio){
+      radio.checked = true;
+      radio.closest(".qty-card").classList.add("selected");
+    }
+  }
+}
+
+function removeCartBox(i){
+  state.cart.splice(i, 1);
+  renderCartUI();
+}
 
 /* ================= PASO 2: COMBINACIÓN (sabor + topping + cantidad) ================= */
 const comboSaborSelect = document.getElementById("comboSabor");
@@ -633,6 +698,13 @@ TOPPINGS_INCLUIDOS.forEach(name => {
   o.value = name; o.textContent = name;
   comboToppingSelect.appendChild(o);
 });
+
+function renderComboIntro(){
+  const p = state.currentBox.presentacion;
+  if (!p) return;
+  document.getElementById("comboSubtitle").textContent =
+    `Esta caja es de ${p.cant} donas y puedes usar hasta ${p.maxSelect} sabores distintos. Dinos cuántas donas quieres de cada uno y qué topping le pones.`;
+}
 
 function stepCombo(delta){
   const rem = remaining();
@@ -651,6 +723,10 @@ function updateStepperUI(){
   document.getElementById("addComboBtn").disabled = rem <= 0;
 }
 
+function updateComboButtons(){
+  document.getElementById("addAnotherBoxBtn").disabled = !boxComplete();
+}
+
 function showComboError(text){
   const el = document.getElementById("comboError");
   el.textContent = text;
@@ -661,7 +737,7 @@ function clearComboError(){
 }
 
 function addCombo(){
-  if (!state.presentacion) return;
+  if (!state.currentBox.presentacion) return;
   clearComboError();
 
   const saborId = comboSaborSelect.value;
@@ -674,41 +750,51 @@ function addCombo(){
     return;
   }
 
-  const max = state.presentacion.maxSelect;
-  const saborYaUsado = state.combos.some(c => c.sabor === saborId);
+  const max = state.currentBox.presentacion.maxSelect;
+  const saborYaUsado = state.currentBox.combos.some(c => c.sabor === saborId);
   if (!saborYaUsado && distinctSabores() >= max){
     showComboError(`Ya elegiste el máximo de ${max} sabores distintos para esta caja.`);
     return;
   }
 
-  const existente = state.combos.find(c => c.sabor === saborId && c.topping === toppingName);
+  const existente = state.currentBox.combos.find(c => c.sabor === saborId && c.topping === toppingName);
   if (existente){
     existente.cantidad += qty;
   } else {
-    state.combos.push({ sabor: saborId, topping: toppingName, cantidad: qty });
+    state.currentBox.combos.push({ sabor: saborId, topping: toppingName, cantidad: qty });
   }
 
   comboQty = 1;
   renderComboList();
   updateStepperUI();
+  updateComboButtons();
   updateActionBar("combo");
 }
 
 function removeCombo(index){
-  state.combos.splice(index, 1);
+  state.currentBox.combos.splice(index, 1);
   renderComboList();
   updateStepperUI();
+  updateComboButtons();
   updateActionBar("combo");
+}
+
+function addAnotherBox(){
+  if (!boxComplete()) return;
+  state.cart.push(state.currentBox);
+  state.currentBox = { presentacion: null, combos: [] };
+  comboQty = 1;
+  goTo("qty");
 }
 
 function renderComboList(){
   const list = document.getElementById("comboList");
   list.innerHTML = "";
 
-  if (state.combos.length === 0){
+  if (state.currentBox.combos.length === 0){
     list.innerHTML = `<p class="combo-empty">Aún no has agregado ninguna combinación.</p>`;
   } else {
-    state.combos.forEach((c, i) => {
+    state.currentBox.combos.forEach((c, i) => {
       const saborName = SABORES.find(s => s.id === c.sabor)?.name || c.sabor;
       const row = document.createElement("div");
       row.className = "combo-row";
@@ -720,11 +806,11 @@ function renderComboList(){
     });
   }
 
-  const total = state.presentacion ? state.presentacion.cant : 0;
+  const total = state.currentBox.presentacion ? state.currentBox.presentacion.cant : 0;
   const asignado = totalAsignado();
   const counterEl = document.getElementById("comboCounter");
   if (asignado === total && total > 0){
-    counterEl.textContent = `¡Listo! Ya asignaste tus ${total} donas 🎉`;
+    counterEl.textContent = `¡Listo! Ya asignaste las ${total} donas de esta caja 🎉`;
   } else {
     counterEl.textContent = `${asignado} de ${total} donas asignadas`;
   }
@@ -755,21 +841,23 @@ function renderZona(){
 }
 
 function calcTotal(){
-  if (!state.presentacion) return 0;
-  return state.presentacion.price + (state.toppingsExtra.length * TOPPING_EXTRA_PRICE);
+  const cajasTotal = state.cart.reduce((s, box) => s + box.presentacion.price, 0);
+  return cajasTotal + (state.toppingsExtra.length * TOPPING_EXTRA_PRICE);
 }
 
 function updateSummary(){
   const body = document.getElementById("summaryBody");
-  if (!state.presentacion){ body.innerHTML = ""; return; }
+  if (state.cart.length === 0){ body.innerHTML = `<p class="summary-empty">No agregaste ninguna caja todavía.</p>`; return; }
 
   const total = calcTotal();
 
   let html = "";
-  html += line(`Caja de ${state.presentacion.cant} donas`, fmt(state.presentacion.price));
-  state.combos.forEach(c => {
-    const saborName = SABORES.find(s => s.id === c.sabor)?.name || c.sabor;
-    html += line(`${c.cantidad} × ${saborName}`, c.topping || "Sin topping");
+  state.cart.forEach((box, i) => {
+    html += line(`Caja ${i+1}: ${box.presentacion.cant} donas`, fmt(box.presentacion.price));
+    box.combos.forEach(c => {
+      const saborName = SABORES.find(s => s.id === c.sabor)?.name || c.sabor;
+      html += line(`&nbsp;&nbsp;${c.cantidad} × ${saborName}`, c.topping || "Sin topping");
+    });
   });
   if (state.toppingsExtra.length) html += line(`Toppings adicionales (${state.toppingsExtra.length})`, fmt(state.toppingsExtra.length * TOPPING_EXTRA_PRICE));
   html += `<div class="summary-line total"><span>Total</span><span>${fmt(total)}</span></div>`;
@@ -788,7 +876,7 @@ function enviarPedido(){
   const fecha = document.getElementById("fecha").value.trim();
   const errorMsg = document.getElementById("errorMsg");
 
-  if (!state.presentacion || !nombre || !telefono || !direccion){
+  if (state.cart.length === 0 || !nombre || !telefono || !direccion){
     errorMsg.style.display = "block";
     return;
   }
@@ -797,11 +885,12 @@ function enviarPedido(){
   const total = calcTotal();
 
   let msg = `¡Hola Donitas de Su Gracia! 🍩 Quiero hacer este pedido:\n\n`;
-  msg += `📦 Caja de ${state.presentacion.cant} donas — ${fmt(state.presentacion.price)}\n`;
-  msg += `🎨 Combinación:\n`;
-  state.combos.forEach(c => {
-    const saborName = SABORES.find(s => s.id === c.sabor)?.name || c.sabor;
-    msg += `   • ${c.cantidad} ${saborName}${c.topping ? " + " + c.topping : ""}\n`;
+  state.cart.forEach((box, i) => {
+    msg += `📦 Caja ${i+1}: ${box.presentacion.cant} donas — ${fmt(box.presentacion.price)}\n`;
+    box.combos.forEach(c => {
+      const saborName = SABORES.find(s => s.id === c.sabor)?.name || c.sabor;
+      msg += `   • ${c.cantidad} ${saborName}${c.topping ? " + " + c.topping : ""}\n`;
+    });
   });
   if (state.toppingsExtra.length) msg += `✨ Toppings adicionales: ${state.toppingsExtra.join(", ")} (+${fmt(state.toppingsExtra.length * TOPPING_EXTRA_PRICE)})\n`;
   msg += `\n💰 Total: ${fmt(total)}\n\n`;
