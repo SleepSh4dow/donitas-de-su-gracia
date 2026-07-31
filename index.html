@@ -194,11 +194,11 @@ p{ margin:0; }
 .qty-card .price{ margin-top:8px; font-weight:700; color:var(--cocoa); }
 .qty-card.selected{ border-color:var(--rose); background:var(--blush); }
 
-/* Option grid (sabores / toppings) */
+/* Option grid (toppings adicionales) */
 .opt-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; }
 .opt{
   position:relative;
-  display:flex; align-items:center; gap:10px;
+  display:flex; align-items:flex-start; gap:10px;
   border:2px solid var(--line);
   border-radius:14px;
   padding:12px 12px;
@@ -206,12 +206,73 @@ p{ margin:0; }
   background: var(--cream-2);
   font-size:0.88rem;
   transition: border-color .15s ease, background .15s ease, opacity .15s ease;
+  max-width:100%;
+  overflow:hidden;
 }
-.opt input{ accent-color: var(--rose); width:16px; height:16px; flex-shrink:0; }
+.opt input{ accent-color: var(--rose); width:16px; height:16px; flex-shrink:0; margin-top:2px; }
 .opt.selected{ border-color:var(--rose); background:var(--blush); }
 .opt.disabled{ opacity:0.4; cursor:not-allowed; }
-.opt .dot{ width:14px; height:14px; border-radius:50%; flex-shrink:0; border:1px solid rgba(0,0,0,0.1); }
+.opt .dot{ width:14px; height:14px; border-radius:50%; flex-shrink:0; border:1px solid rgba(0,0,0,0.1); margin-top:2px; }
+.opt-content{
+  display:flex; flex-wrap:wrap; align-items:baseline;
+  gap:2px 8px;
+  flex:1; min-width:0;
+}
+.opt-content .opt-name{ word-break:break-word; overflow-wrap:break-word; }
 .opt .price-tag{ margin-left:auto; font-size:0.72rem; color:var(--rose-dark); font-weight:700; white-space:nowrap; }
+
+/* ---------- Módulo de combinación (sabor + topping + cantidad) ---------- */
+.combo-form{ margin-top:2px; }
+.qty-stepper{
+  display:flex; align-items:center; justify-content:center; gap:18px;
+  margin-top:8px;
+}
+.qty-stepper button{
+  width:42px; height:42px; border-radius:50%;
+  border:2px solid var(--rose);
+  background: var(--white);
+  color: var(--rose-dark);
+  font-size:1.4rem; font-weight:700;
+  line-height:1;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer;
+  transition: background .15s ease, opacity .15s ease;
+}
+.qty-stepper button:hover{ background: var(--blush); }
+.qty-stepper button:disabled{ opacity:0.35; cursor:not-allowed; }
+.qty-stepper .qty-value{
+  min-width:40px; text-align:center;
+  font-family:'Playfair Display', serif; font-weight:700; font-size:1.4rem;
+  color: var(--cocoa);
+}
+.add-combo-btn{
+  width:100%; margin-top:18px;
+  background: var(--gold);
+  color:#fff; border:none;
+  padding:13px; border-radius:14px;
+  font-family:'Quicksand', sans-serif; font-weight:700; font-size:0.95rem;
+  cursor:pointer;
+  transition: opacity .15s ease, transform .15s ease;
+}
+.add-combo-btn:hover{ opacity:0.9; transform: translateY(-1px); }
+.add-combo-btn:disabled{ opacity:0.4; cursor:not-allowed; transform:none; }
+.combo-error{
+  color:var(--rose-dark); font-size:0.8rem; font-weight:700;
+  margin-top:8px; display:none; text-align:center;
+}
+.combo-list{ margin-top:20px; display:flex; flex-direction:column; gap:8px; }
+.combo-row{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  background: var(--cream-2); border:1px solid var(--line); border-radius:12px;
+  padding:10px 14px; font-size:0.88rem;
+}
+.combo-row .txt{ flex:1; min-width:0; }
+.combo-row .txt b{ color:var(--rose-dark); }
+.combo-row .remove-btn{
+  background:none; border:none; color:var(--rose-dark);
+  font-weight:700; font-size:1.05rem; cursor:pointer; padding:2px 6px; flex-shrink:0;
+}
+.combo-empty{ font-size:0.85rem; color:var(--cocoa-soft); font-style:italic; text-align:center; margin-top:14px; }
 
 .note{
   font-size:0.82rem;
@@ -224,7 +285,7 @@ p{ margin:0; }
 }
 .counter{ font-size:0.78rem; color:var(--rose-dark); font-weight:700; margin-top:12px; text-align:center; }
 
-textarea, input[type="text"], input[type="tel"]{
+textarea, input[type="text"], input[type="tel"], input[type="date"], select{
   width:100%;
   border:2px solid var(--line);
   border-radius:14px;
@@ -234,8 +295,18 @@ textarea, input[type="text"], input[type="tel"]{
   color:var(--cocoa);
   background: var(--cream-2);
   margin-top:6px;
+  appearance:none;
+  -webkit-appearance:none;
 }
-textarea:focus, input:focus{ outline:2px solid var(--rose); outline-offset:1px; border-color:var(--rose); }
+select{
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23B23A5D' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position: right 14px center;
+  background-size:16px;
+  padding-right:36px;
+}
+input[type="date"]{ color-scheme: light; }
+textarea:focus, input:focus, select:focus{ outline:2px solid var(--rose); outline-offset:1px; border-color:var(--rose); }
 label.field{ display:block; font-size:0.85rem; font-weight:700; color:var(--cocoa-soft); margin-top:14px; }
 label.field:first-child{ margin-top:0; }
 
@@ -333,38 +404,44 @@ label.field:first-child{ margin-top:0; }
   </div>
 </section>
 
-<!-- ============ PANTALLA 2: SABORES ============ -->
-<section class="screen" id="screen-sabores">
+<!-- ============ PANTALLA 2: COMBINACIÓN (sabor + topping + cantidad) ============ -->
+<section class="screen" id="screen-combo">
   <div class="wizard-card">
     <div class="progress-dots" data-progress="2"></div>
     <button class="back-link" onclick="goTo('qty')">← Atrás</button>
     <div class="wizard-head">
-      <h2>¿Qué sabor quieres en tu dona?</h2>
-      <p>Sabor de la cobertura.</p>
+      <h2>Arma tu combinación</h2>
+      <p>Dinos cuántas donas quieres de cada sabor y qué topping le pones a cada una.</p>
     </div>
-    <div class="opt-grid" id="saboresGrid"></div>
-    <div class="counter" id="saboresCounter"></div>
+
+    <div class="combo-form">
+      <label class="field" for="comboSabor">Sabor</label>
+      <select id="comboSabor"></select>
+
+      <label class="field" for="comboTopping">Topping incluido (opcional)</label>
+      <select id="comboTopping"><option value="">Sin topping</option></select>
+
+      <label class="field">Cantidad</label>
+      <div class="qty-stepper">
+        <button type="button" id="comboMinus" onclick="stepCombo(-1)">−</button>
+        <span class="qty-value" id="comboQtyValue">1</span>
+        <button type="button" id="comboPlus" onclick="stepCombo(1)">+</button>
+      </div>
+
+      <button class="add-combo-btn" id="addComboBtn" onclick="addCombo()">+ Agregar a mi caja</button>
+      <p class="combo-error" id="comboError"></p>
+    </div>
+
+    <div class="combo-list" id="comboList"></div>
+    <div class="counter" id="comboCounter"></div>
   </div>
 </section>
 
-<!-- ============ PANTALLA 3: TOPPINGS INCLUIDOS ============ -->
-<section class="screen" id="screen-toppings">
-  <div class="wizard-card">
-    <div class="progress-dots" data-progress="3"></div>
-    <button class="back-link" onclick="goTo('sabores')">← Atrás</button>
-    <div class="wizard-head">
-      <h2>Toppings</h2>
-    </div>
-    <div class="opt-grid" id="toppingsGrid"></div>
-    <div class="counter" id="toppingsCounter"></div>
-  </div>
-</section>
-
-<!-- ============ PANTALLA 4: TOPPINGS ADICIONALES ============ -->
+<!-- ============ PANTALLA 3: TOPPINGS ADICIONALES ============ -->
 <section class="screen" id="screen-toppingsExtra">
   <div class="wizard-card">
-    <div class="progress-dots" data-progress="4"></div>
-    <button class="back-link" onclick="goTo('toppings')">← Atrás</button>
+    <div class="progress-dots" data-progress="3"></div>
+    <button class="back-link" onclick="goTo('combo')">← Atrás</button>
     <div class="wizard-head">
       <h2>Toppings adicionales</h2>
       <p>Ingredientes premium. Elige los que quieras.</p>
@@ -377,7 +454,7 @@ label.field:first-child{ margin-top:0; }
 <!-- ============ PANTALLA 5: DATOS DE ENTREGA ============ -->
 <section class="screen" id="screen-entrega">
   <div class="wizard-card">
-    <div class="progress-dots" data-progress="5"></div>
+    <div class="progress-dots" data-progress="4"></div>
     <button class="back-link" onclick="goTo('toppingsExtra')">← Atrás</button>
     <div class="wizard-head">
       <h2>Datos de entrega</h2>
@@ -393,7 +470,7 @@ label.field:first-child{ margin-top:0; }
     <input type="text" id="direccion" placeholder="Barrio, calle, referencia">
 
     <label class="field" for="fecha">Fecha en la que necesitas tu pedido</label>
-    <input type="text" id="fecha" placeholder="Ej. Sábado 2 de agosto">
+    <input type="date" id="fecha">
 
     <div class="note" id="zonaNota"></div>
 
@@ -443,16 +520,26 @@ const TOPPING_EXTRA_PRICE = 1000; // por topping adicional seleccionado (aplica 
 /* ================= ESTADO ================= */
 const state = {
   presentacion: null,
-  sabores: [],
-  toppingsIncl: [],
+  combos: [],        // [{ sabor: 'chocolate', topping: 'Maní'|'', cantidad: 4 }, ...]
   toppingsExtra: [],
 };
+let comboQty = 1;
 
 const fmt = (n) => "$" + n.toLocaleString("es-CO");
-const TOTAL_STEPS = 5;
+const MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+function formatFecha(dateStr){
+  if (!dateStr) return "";
+  const [y,m,d] = dateStr.split("-").map(Number);
+  return `${d} de ${MESES[m-1]} de ${y}`;
+}
+function totalAsignado(){ return state.combos.reduce((s,c) => s + c.cantidad, 0); }
+function distinctSabores(){ return new Set(state.combos.map(c => c.sabor)).size; }
+function remaining(){ return state.presentacion ? state.presentacion.cant - totalAsignado() : 0; }
+
+const TOTAL_STEPS = 4;
 
 /* ================= NAVEGACIÓN ENTRE PANTALLAS ================= */
-const STEP_IDS = { qty:1, sabores:2, toppings:3, toppingsExtra:4, entrega:5 };
+const STEP_IDS = { qty:1, combo:2, toppingsExtra:3, entrega:4 };
 
 function goTo(name){
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
@@ -492,14 +579,10 @@ function updateActionBar(name){
   if (name === "qty"){
     actionBtn.textContent = "Continuar";
     actionBtn.disabled = !state.presentacion;
-    actionBtn.onclick = () => goTo("sabores");
-  } else if (name === "sabores"){
+    actionBtn.onclick = () => goTo("combo");
+  } else if (name === "combo"){
     actionBtn.textContent = "Continuar";
-    actionBtn.disabled = state.sabores.length < 1;
-    actionBtn.onclick = () => goTo("toppings");
-  } else if (name === "toppings"){
-    actionBtn.textContent = "Continuar";
-    actionBtn.disabled = false;
+    actionBtn.disabled = !state.presentacion || totalAsignado() !== state.presentacion.cant;
     actionBtn.onclick = () => goTo("toppingsExtra");
   } else if (name === "toppingsExtra"){
     actionBtn.textContent = "Continuar";
@@ -525,112 +608,126 @@ PRESENTACIONES.forEach((p) => {
   `;
   card.querySelector("input").addEventListener("change", () => {
     state.presentacion = p;
-    state.sabores = [];
-    state.toppingsIncl = [];
+    state.combos = [];
+    comboQty = 1;
     document.querySelectorAll(".qty-card").forEach(c => c.classList.remove("selected"));
     card.classList.add("selected");
-    renderSabores();
-    renderToppingsIncluidos();
+    renderComboList();
+    updateStepperUI();
     updateActionBar("qty");
   });
   qtyGrid.appendChild(card);
 });
 
-/* ================= PASO 2: SABORES ================= */
-function renderSabores(){
-  const grid = document.getElementById("saboresGrid");
-  grid.innerHTML = "";
-  const max = state.presentacion ? state.presentacion.maxSelect : 0;
+/* ================= PASO 2: COMBINACIÓN (sabor + topping + cantidad) ================= */
+const comboSaborSelect = document.getElementById("comboSabor");
+SABORES.forEach(s => {
+  const o = document.createElement("option");
+  o.value = s.id; o.textContent = s.name;
+  comboSaborSelect.appendChild(o);
+});
 
-  SABORES.forEach((s) => {
-    const opt = document.createElement("label");
-    opt.className = "opt";
-    opt.innerHTML = `
-      <input type="checkbox" value="${s.id}">
-      <span class="dot" style="background:${s.color}"></span>
-      ${s.name}
-    `;
-    const input = opt.querySelector("input");
-    input.addEventListener("change", () => {
-      if (input.checked){
-        if (state.sabores.length >= max){ input.checked = false; return; }
-        state.sabores.push(s.id);
-        opt.classList.add("selected");
-      } else {
-        state.sabores = state.sabores.filter(f => f !== s.id);
-        opt.classList.remove("selected");
-      }
-      renderSaboresLock();
-      updateSaboresCounter();
-      updateActionBar("sabores");
+const comboToppingSelect = document.getElementById("comboTopping");
+TOPPINGS_INCLUIDOS.forEach(name => {
+  const o = document.createElement("option");
+  o.value = name; o.textContent = name;
+  comboToppingSelect.appendChild(o);
+});
+
+function stepCombo(delta){
+  const rem = remaining();
+  let next = comboQty + delta;
+  if (next < 1) next = 1;
+  if (next > rem) next = rem > 0 ? rem : 1;
+  comboQty = next;
+  updateStepperUI();
+}
+
+function updateStepperUI(){
+  const rem = remaining();
+  document.getElementById("comboQtyValue").textContent = comboQty;
+  document.getElementById("comboMinus").disabled = comboQty <= 1;
+  document.getElementById("comboPlus").disabled = comboQty >= rem || rem <= 0;
+  document.getElementById("addComboBtn").disabled = rem <= 0;
+}
+
+function showComboError(text){
+  const el = document.getElementById("comboError");
+  el.textContent = text;
+  el.style.display = "block";
+}
+function clearComboError(){
+  document.getElementById("comboError").style.display = "none";
+}
+
+function addCombo(){
+  if (!state.presentacion) return;
+  clearComboError();
+
+  const saborId = comboSaborSelect.value;
+  const toppingName = comboToppingSelect.value;
+  const qty = comboQty;
+  const rem = remaining();
+
+  if (qty > rem){
+    showComboError(`Solo puedes agregar ${rem} donas más a esta caja.`);
+    return;
+  }
+
+  const max = state.presentacion.maxSelect;
+  const saborYaUsado = state.combos.some(c => c.sabor === saborId);
+  if (!saborYaUsado && distinctSabores() >= max){
+    showComboError(`Ya elegiste el máximo de ${max} sabores distintos para esta caja.`);
+    return;
+  }
+
+  const existente = state.combos.find(c => c.sabor === saborId && c.topping === toppingName);
+  if (existente){
+    existente.cantidad += qty;
+  } else {
+    state.combos.push({ sabor: saborId, topping: toppingName, cantidad: qty });
+  }
+
+  comboQty = 1;
+  renderComboList();
+  updateStepperUI();
+  updateActionBar("combo");
+}
+
+function removeCombo(index){
+  state.combos.splice(index, 1);
+  renderComboList();
+  updateStepperUI();
+  updateActionBar("combo");
+}
+
+function renderComboList(){
+  const list = document.getElementById("comboList");
+  list.innerHTML = "";
+
+  if (state.combos.length === 0){
+    list.innerHTML = `<p class="combo-empty">Aún no has agregado ninguna combinación.</p>`;
+  } else {
+    state.combos.forEach((c, i) => {
+      const saborName = SABORES.find(s => s.id === c.sabor)?.name || c.sabor;
+      const row = document.createElement("div");
+      row.className = "combo-row";
+      row.innerHTML = `
+        <span class="txt"><b>${c.cantidad}</b> × ${saborName}${c.topping ? " + " + c.topping : ""}</span>
+        <button class="remove-btn" onclick="removeCombo(${i})">✕</button>
+      `;
+      list.appendChild(row);
     });
-    grid.appendChild(opt);
-  });
-  updateSaboresCounter();
-}
+  }
 
-function renderSaboresLock(){
-  const max = state.presentacion ? state.presentacion.maxSelect : 0;
-  document.querySelectorAll("#saboresGrid .opt").forEach(opt => {
-    const input = opt.querySelector("input");
-    if (!input.checked && state.sabores.length >= max){
-      opt.classList.add("disabled");
-    } else {
-      opt.classList.remove("disabled");
-    }
-  });
-}
-
-function updateSaboresCounter(){
-  const max = state.presentacion ? state.presentacion.maxSelect : 0;
-  document.getElementById("saboresCounter").textContent =
-    `${state.sabores.length} de ${max} sabores seleccionados (mínimo 1)`;
-}
-
-/* ================= PASO 3: TOPPINGS INCLUIDOS ================= */
-function renderToppingsIncluidos(){
-  const grid = document.getElementById("toppingsGrid");
-  grid.innerHTML = "";
-  const max = state.presentacion ? state.presentacion.maxSelect : 0;
-
-  TOPPINGS_INCLUIDOS.forEach((name) => {
-    const opt = document.createElement("label");
-    opt.className = "opt";
-    opt.innerHTML = `<input type="checkbox" value="${name}">${name}`;
-    const input = opt.querySelector("input");
-    input.addEventListener("change", () => {
-      if (input.checked){
-        if (state.toppingsIncl.length >= max){ input.checked = false; return; }
-        state.toppingsIncl.push(name);
-        opt.classList.add("selected");
-      } else {
-        state.toppingsIncl = state.toppingsIncl.filter(t => t !== name);
-        opt.classList.remove("selected");
-      }
-      renderToppingsLock();
-      updateToppingsCounter();
-    });
-    grid.appendChild(opt);
-  });
-  updateToppingsCounter();
-}
-
-function renderToppingsLock(){
-  const max = state.presentacion ? state.presentacion.maxSelect : 0;
-  document.querySelectorAll("#toppingsGrid .opt").forEach(opt => {
-    const input = opt.querySelector("input");
-    if (!input.checked && state.toppingsIncl.length >= max){
-      opt.classList.add("disabled");
-    } else {
-      opt.classList.remove("disabled");
-    }
-  });
-}
-
-function updateToppingsCounter(){
-  const max = state.presentacion ? state.presentacion.maxSelect : 0;
-  document.getElementById("toppingsCounter").textContent =
-    `${state.toppingsIncl.length} de ${max} toppings seleccionados`;
+  const total = state.presentacion ? state.presentacion.cant : 0;
+  const asignado = totalAsignado();
+  const counterEl = document.getElementById("comboCounter");
+  if (asignado === total && total > 0){
+    counterEl.textContent = `¡Listo! Ya asignaste tus ${total} donas 🎉`;
+  } else {
+    counterEl.textContent = `${asignado} de ${total} donas asignadas`;
+  }
 }
 
 /* ================= PASO 4: TOPPINGS ADICIONALES ================= */
@@ -638,7 +735,7 @@ const toppingsExtraGrid = document.getElementById("toppingsExtraGrid");
 TOPPINGS_ADICIONALES.forEach((name) => {
   const opt = document.createElement("label");
   opt.className = "opt";
-  opt.innerHTML = `<input type="checkbox" value="${name}">${name}<span class="price-tag">+${fmt(TOPPING_EXTRA_PRICE)}</span>`;
+  opt.innerHTML = `<input type="checkbox" value="${name}"><span class="opt-content"><span class="opt-name">${name}</span><span class="price-tag">+${fmt(TOPPING_EXTRA_PRICE)}</span></span>`;
   const input = opt.querySelector("input");
   input.addEventListener("change", () => {
     if (input.checked){
@@ -666,13 +763,14 @@ function updateSummary(){
   const body = document.getElementById("summaryBody");
   if (!state.presentacion){ body.innerHTML = ""; return; }
 
-  const saborNames = state.sabores.map(id => SABORES.find(s => s.id === id)?.name).join(", ");
   const total = calcTotal();
 
   let html = "";
   html += line(`Caja de ${state.presentacion.cant} donas`, fmt(state.presentacion.price));
-  if (saborNames) html += line("Sabores", saborNames);
-  if (state.toppingsIncl.length) html += line("Toppings incluidos", state.toppingsIncl.join(", "));
+  state.combos.forEach(c => {
+    const saborName = SABORES.find(s => s.id === c.sabor)?.name || c.sabor;
+    html += line(`${c.cantidad} × ${saborName}`, c.topping || "Sin topping");
+  });
   if (state.toppingsExtra.length) html += line(`Toppings adicionales (${state.toppingsExtra.length})`, fmt(state.toppingsExtra.length * TOPPING_EXTRA_PRICE));
   html += `<div class="summary-line total"><span>Total</span><span>${fmt(total)}</span></div>`;
 
@@ -696,21 +794,26 @@ function enviarPedido(){
   }
   errorMsg.style.display = "none";
 
-  const saborNames = state.sabores.map(id => SABORES.find(s => s.id === id)?.name).join(", ");
   const total = calcTotal();
 
   let msg = `¡Hola Donitas de Su Gracia! 🍩 Quiero hacer este pedido:\n\n`;
   msg += `📦 Caja de ${state.presentacion.cant} donas — ${fmt(state.presentacion.price)}\n`;
-  if (saborNames) msg += `🎨 Sabores: ${saborNames}\n`;
-  if (state.toppingsIncl.length) msg += `🍬 Toppings incluidos: ${state.toppingsIncl.join(", ")}\n`;
+  msg += `🎨 Combinación:\n`;
+  state.combos.forEach(c => {
+    const saborName = SABORES.find(s => s.id === c.sabor)?.name || c.sabor;
+    msg += `   • ${c.cantidad} ${saborName}${c.topping ? " + " + c.topping : ""}\n`;
+  });
   if (state.toppingsExtra.length) msg += `✨ Toppings adicionales: ${state.toppingsExtra.join(", ")} (+${fmt(state.toppingsExtra.length * TOPPING_EXTRA_PRICE)})\n`;
   msg += `\n💰 Total: ${fmt(total)}\n\n`;
   msg += `👤 Nombre: ${nombre}\n📞 Teléfono: ${telefono}\n📍 Dirección: ${direccion}\n`;
-  if (fecha) msg += `📅 Fecha deseada: ${fecha}\n`;
+  if (fecha) msg += `📅 Fecha deseada: ${formatFecha(fecha)}\n`;
 
   const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
   window.open(url, "_blank");
 }
+
+/* ================= INICIALIZACIÓN ================= */
+document.getElementById("fecha").min = new Date().toISOString().split("T")[0];
 </script>
 </body>
 </html>
