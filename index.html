@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Donitas de Su Gracia — Haz tu pedido</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+
+/* =========================================================
+   CONFIGURACIÓN RÁPIDA PARA LA DUEÑA DEL NEGOCIO
+   =========================================================
+   - Número de WhatsApp: buscar "WHATSAPP_NUMBER" en el <script>
+   - Zona de domicilio: buscar "ZONA_COBERTURA" en el <script>
+   - Precios, sabores y toppings: buscar "PRESENTACIONES", "SABORES",
+     "TOPPINGS_INCLUIDOS" y "TOPPINGS_ADICIONALES" en el <script>
+   ========================================================= */
+
+:root{
+  --cream: #FDF4EC;
+  --cream-2: #FBEAE2;
+  --blush: #F8DCE4;
+  --rose: #D6577E;
+  --rose-dark: #B23A5D;
+  --gold: #C9973F;
+  --cocoa: #4A2E24;
+  --cocoa-soft: #8A6A5E;
+  --lilac: #9B72C4;
+  --white: #FFFFFF;
+  --line: rgba(74,46,36,0.14);
+  --shadow: 0 12px 30px rgba(178,58,93,0.14);
+}
+
+*{ box-sizing: border-box; }
+html, body{ height:100%; }
+body{
+  margin:0;
+  background: var(--cream);
+  color: var(--cocoa);
+  font-family: 'Quicksand', sans-serif;
+  font-weight: 500;
+  line-height: 1.5;
+  overflow-x:hidden;
+}
+
+h1,h2,h3{ font-family:'Playfair Display', serif; margin:0; color:var(--cocoa); }
+p{ margin:0; }
+
+/* ---------- SCREENS (una a la vez, tipo asistente) ---------- */
+.screen{
+  position:fixed;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  padding: 40px 20px 30px;
+  overflow-y:auto;
+  opacity:0;
+  visibility:hidden;
+  transform: translateX(24px);
+  transition: opacity .28s ease, transform .28s ease;
+  background: var(--cream);
+}
+.screen.active{
+  opacity:1;
+  visibility:visible;
+  transform: translateX(0);
+}
+
+/* ---------- HERO ---------- */
+#screen-hero{
+  justify-content:center;
+  text-align:center;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(214,87,126,0.10), transparent 40%),
+    radial-gradient(circle at 85% 10%, rgba(155,114,196,0.12), transparent 45%),
+    var(--cream);
+}
+.crown-mark{ width:64px; height:64px; margin:0 auto 6px; display:block; }
+.hero h1{
+  font-family:'Pinyon Script', cursive;
+  font-weight:400;
+  font-size: clamp(3rem, 9vw, 5rem);
+  color: var(--rose-dark);
+  line-height:1;
+}
+.hero .subtitle{
+  font-family:'Playfair Display', serif;
+  font-style:italic;
+  font-size: clamp(1rem, 2.6vw, 1.35rem);
+  color:var(--cocoa-soft);
+  margin-top:4px;
+}
+.hero .tagline{
+  margin-top:14px;
+  font-size:0.95rem;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:var(--gold);
+  font-weight:700;
+}
+.verse-card{
+  margin: 28px auto 0;
+  max-width: 340px;
+  border: 1.5px dashed var(--gold);
+  border-radius: 18px;
+  padding: 16px 22px;
+  background: rgba(255,255,255,0.55);
+  font-family:'Playfair Display', serif;
+  font-style: italic;
+  color: var(--rose-dark);
+  font-size: 0.95rem;
+}
+.verse-card small{
+  display:block;
+  margin-top:6px;
+  font-family:'Quicksand', sans-serif;
+  font-style:normal;
+  font-weight:700;
+  letter-spacing:0.1em;
+  font-size:0.68rem;
+  color: var(--gold);
+}
+.hero-cta{
+  display:inline-block;
+  margin-top:30px;
+  background: var(--rose);
+  color:#fff;
+  border:none;
+  padding: 14px 32px;
+  border-radius: 999px;
+  font-family:'Quicksand', sans-serif;
+  font-weight:700;
+  font-size:1rem;
+  cursor:pointer;
+  box-shadow: var(--shadow);
+  transition: transform .15s ease, background .15s ease;
+}
+.hero-cta:hover{ background:var(--rose-dark); transform: translateY(-2px); }
+.hero-foot{
+  margin-top:40px;
+  font-size:0.8rem;
+  color:var(--cocoa-soft);
+}
+.hero-foot .brand{ font-family:'Pinyon Script', cursive; font-size:1.3rem; color:var(--rose-dark); }
+.hero-foot a{ color:var(--rose-dark); font-weight:700; text-decoration:none; }
+
+/* ---------- WIZARD CARD ---------- */
+.wizard-card{
+  width:100%;
+  max-width: 560px;
+  background: var(--white);
+  border-radius: 24px;
+  padding: 30px 26px 26px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--line);
+  margin-bottom: 100px; /* espacio para la barra inferior */
+}
+
+.progress-dots{ display:flex; gap:7px; justify-content:center; margin-bottom:18px; }
+.progress-dots span{ width:8px; height:8px; border-radius:50%; background: var(--line); }
+.progress-dots span.done{ background: var(--gold); }
+.progress-dots span.current{ background: var(--rose); }
+
+.back-link{
+  display:inline-flex; align-items:center; gap:4px;
+  font-size:0.8rem; color:var(--cocoa-soft); font-weight:700;
+  cursor:pointer; margin-bottom:10px; background:none; border:none; padding:0;
+}
+.back-link:hover{ color:var(--rose-dark); }
+
+.wizard-head{ text-align:center; margin-bottom:20px; }
+.wizard-head h2{ font-size:1.4rem; }
+.wizard-head p{ font-size:0.88rem; color:var(--cocoa-soft); margin-top:6px; }
+
+/* Quantity cards */
+.qty-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+.qty-card{
+  position:relative;
+  border: 2px solid var(--line);
+  border-radius: 16px;
+  padding: 18px 14px;
+  text-align:center;
+  cursor:pointer;
+  transition: border-color .15s ease, background .15s ease;
+  background: var(--cream-2);
+}
+.qty-card input{ position:absolute; opacity:0; }
+.qty-card .n{ font-family:'Playfair Display', serif; font-size:1.7rem; font-weight:700; color:var(--rose-dark); }
+.qty-card .lbl{ font-size:0.72rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--cocoa-soft); }
+.qty-card .price{ margin-top:8px; font-weight:700; color:var(--cocoa); }
+.qty-card.selected{ border-color:var(--rose); background:var(--blush); }
+
+/* Option grid (sabores / toppings) */
+.opt-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; }
+.opt{
+  position:relative;
+  display:flex; align-items:center; gap:10px;
+  border:2px solid var(--line);
+  border-radius:14px;
+  padding:12px 12px;
+  cursor:pointer;
+  background: var(--cream-2);
+  font-size:0.88rem;
+  transition: border-color .15s ease, background .15s ease, opacity .15s ease;
+}
+.opt input{ accent-color: var(--rose); width:16px; height:16px; flex-shrink:0; }
+.opt.selected{ border-color:var(--rose); background:var(--blush); }
+.opt.disabled{ opacity:0.4; cursor:not-allowed; }
+.opt .dot{ width:14px; height:14px; border-radius:50%; flex-shrink:0; border:1px solid rgba(0,0,0,0.1); }
+.opt .price-tag{ margin-left:auto; font-size:0.72rem; color:var(--rose-dark); font-weight:700; white-space:nowrap; }
+
+.note{
+  font-size:0.82rem;
+  color: var(--cocoa-soft);
+  background: var(--cream-2);
+  border-left: 3px solid var(--gold);
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-top:16px;
+}
+.counter{ font-size:0.78rem; color:var(--rose-dark); font-weight:700; margin-top:12px; text-align:center; }
+
+textarea, input[type="text"], input[type="tel"]{
+  width:100%;
+  border:2px solid var(--line);
+  border-radius:14px;
+  padding:12px 14px;
+  font-family:'Quicksand', sans-serif;
+  font-size:0.95rem;
+  color:var(--cocoa);
+  background: var(--cream-2);
+  margin-top:6px;
+}
+textarea:focus, input:focus{ outline:2px solid var(--rose); outline-offset:1px; border-color:var(--rose); }
+label.field{ display:block; font-size:0.85rem; font-weight:700; color:var(--cocoa-soft); margin-top:14px; }
+label.field:first-child{ margin-top:0; }
+
+/* Resumen dentro del último paso */
+.summary-box{
+  margin-top:22px;
+  background: linear-gradient(160deg, var(--blush), var(--cream-2));
+  border: 1px solid var(--line);
+  border-radius:16px;
+  padding: 16px 18px;
+}
+.summary-line{ display:flex; justify-content:space-between; gap:10px; padding:5px 0; font-size:0.88rem; }
+.summary-line.total{
+  border-top: 1.5px dashed var(--gold);
+  margin-top:8px; padding-top:12px;
+  font-family:'Playfair Display', serif;
+  font-size:1.2rem; font-weight:700; color:var(--rose-dark);
+}
+
+/* Botonera inferior fija */
+.action-bar{
+  position:fixed; left:0; right:0; bottom:0;
+  background: var(--white);
+  border-top: 1px solid var(--line);
+  box-shadow: 0 -8px 24px rgba(178,58,93,0.12);
+  padding: 14px 20px;
+  display:flex; justify-content:center;
+  z-index: 60;
+}
+.action-bar .btn{
+  width:100%; max-width:520px;
+  background: var(--rose);
+  color:#fff;
+  border:none;
+  padding:15px;
+  border-radius: 16px;
+  font-family:'Quicksand', sans-serif;
+  font-weight:700;
+  font-size:1rem;
+  cursor:pointer;
+  transition: background .15s ease, transform .15s ease;
+}
+.action-bar .btn:hover{ background:var(--rose-dark); transform: translateY(-1px); }
+.action-bar .btn:disabled{ background:#d8bcc4; cursor:not-allowed; transform:none; }
+
+.error-msg{ color:var(--rose-dark); font-size:0.82rem; margin-top:10px; display:none; font-weight:700; text-align:center; }
+
+@media (min-width:520px){
+  .qty-grid{ grid-template-columns:repeat(4,1fr); }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .screen{ transition:none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ PANTALLA 0: HERO ============ -->
+<section class="screen active" id="screen-hero">
+  <svg class="crown-mark" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+    <circle cx="32" cy="38" r="20" fill="#F6C6D6" stroke="#B23A5D" stroke-width="2"/>
+    <circle cx="32" cy="38" r="7" fill="#FDF4EC" stroke="#B23A5D" stroke-width="2"/>
+    <path d="M18 20 L24 10 L32 16 L40 10 L46 20 L42 24 L22 24 Z" fill="#C9973F"/>
+    <circle cx="24" cy="10" r="2.3" fill="#C9973F"/>
+    <circle cx="32" cy="7" r="2.3" fill="#C9973F"/>
+    <circle cx="40" cy="10" r="2.3" fill="#C9973F"/>
+  </svg>
+  <h1>Donitas de Su Gracia</h1>
+  <p class="subtitle">Mini donas artesanales premium</p>
+  <p class="tagline">Hechas con amor y propósito</p>
+
+  <div class="verse-card">
+    “Prueben y vean que Dios es bueno”
+    <small>Salmo 34:8</small>
+  </div>
+
+  <button class="hero-cta" onclick="goTo('qty')">Arma tu caja 🍩</button>
+
+  <div class="hero-foot">
+    <div class="brand">Donitas de Su Gracia</div>
+    <p style="margin-top:4px;">📸 @donitas.graciavs &nbsp;·&nbsp; 📲 <a href="tel:+573164353759">316 435 37 59</a></p>
+  </div>
+</section>
+
+<!-- ============ PANTALLA 1: ELIGE TU CAJA ============ -->
+<section class="screen" id="screen-qty">
+  <div class="wizard-card">
+    <div class="progress-dots" data-progress="1"></div>
+    <button class="back-link" onclick="goTo('hero')">← Inicio</button>
+    <div class="wizard-head">
+      <h2>Elige tu caja</h2>
+    </div>
+    <div class="qty-grid" id="qtyGrid"></div>
+  </div>
+</section>
+
+<!-- ============ PANTALLA 2: SABORES ============ -->
+<section class="screen" id="screen-sabores">
+  <div class="wizard-card">
+    <div class="progress-dots" data-progress="2"></div>
+    <button class="back-link" onclick="goTo('qty')">← Atrás</button>
+    <div class="wizard-head">
+      <h2>¿Qué sabor quieres en tu dona?</h2>
+      <p>Sabor de la cobertura.</p>
+    </div>
+    <div class="opt-grid" id="saboresGrid"></div>
+    <div class="counter" id="saboresCounter"></div>
+  </div>
+</section>
+
+<!-- ============ PANTALLA 3: TOPPINGS INCLUIDOS ============ -->
+<section class="screen" id="screen-toppings">
+  <div class="wizard-card">
+    <div class="progress-dots" data-progress="3"></div>
+    <button class="back-link" onclick="goTo('sabores')">← Atrás</button>
+    <div class="wizard-head">
+      <h2>Toppings</h2>
+    </div>
+    <div class="opt-grid" id="toppingsGrid"></div>
+    <div class="counter" id="toppingsCounter"></div>
+  </div>
+</section>
+
+<!-- ============ PANTALLA 4: TOPPINGS ADICIONALES ============ -->
+<section class="screen" id="screen-toppingsExtra">
+  <div class="wizard-card">
+    <div class="progress-dots" data-progress="4"></div>
+    <button class="back-link" onclick="goTo('toppings')">← Atrás</button>
+    <div class="wizard-head">
+      <h2>Toppings adicionales</h2>
+      <p>Ingredientes premium. Elige los que quieras.</p>
+    </div>
+    <div class="opt-grid" id="toppingsExtraGrid"></div>
+    <div class="note">Costo extra de $1.000 por cada 3 donitas con este topping premium.</div>
+  </div>
+</section>
+
+<!-- ============ PANTALLA 5: DATOS DE ENTREGA ============ -->
+<section class="screen" id="screen-entrega">
+  <div class="wizard-card">
+    <div class="progress-dots" data-progress="5"></div>
+    <button class="back-link" onclick="goTo('toppingsExtra')">← Atrás</button>
+    <div class="wizard-head">
+      <h2>Datos de entrega</h2>
+    </div>
+
+    <label class="field" for="nombre">Nombre completo</label>
+    <input type="text" id="nombre" placeholder="Tu nombre">
+
+    <label class="field" for="telefono">Teléfono de contacto</label>
+    <input type="tel" id="telefono" placeholder="Ej. 300 123 4567">
+
+    <label class="field" for="direccion">Dirección de entrega</label>
+    <input type="text" id="direccion" placeholder="Barrio, calle, referencia">
+
+    <label class="field" for="fecha">Fecha en la que necesitas tu pedido</label>
+    <input type="text" id="fecha" placeholder="Ej. Sábado 2 de agosto">
+
+    <div class="note" id="zonaNota"></div>
+
+    <div class="summary-box" id="summaryBody"></div>
+    <p class="error-msg" id="errorMsg">Por favor completa nombre, teléfono y dirección antes de enviar.</p>
+  </div>
+</section>
+
+<!-- ============ BARRA DE ACCIÓN INFERIOR ============ -->
+<div class="action-bar" id="actionBar" style="display:none;">
+  <button class="btn" id="actionBtn"></button>
+</div>
+
+<script>
+/* ================= CONFIGURACIÓN DEL NEGOCIO ================= */
+const WHATSAPP_NUMBER = "573164353759"; // formato internacional sin '+'
+const ZONA_COBERTURA = "Hacemos domicilios en el sector de Madelena y alrededores. Dinos tu dirección exacta y coordinamos el envío por WhatsApp.";
+
+const PRESENTACIONES = [
+  { cant: 9,  price: 10000, maxSelect: 3 },
+  { cant: 18, price: 18000, maxSelect: 4 },
+  { cant: 27, price: 24000, maxSelect: 4 },
+  { cant: 36, price: 34000, maxSelect: 5 },
+];
+
+const SABORES = [
+  { id:"chocolate", name:"Chocolate",       color:"#5C3A28" },
+  { id:"vainilla", name:"Vainilla",         color:"#F2D9B1" },
+  { id:"fresa", name:"Fresa",               color:"#F2A6C0" },
+  { id:"chocomora", name:"Chocomora", color:"#8B5FBF" },
+  { id:"chocouva", name:"Chocouva",       color:"#10289E" },
+  { id:"chocolimon", name:"Chocolimón",     color:"#67D43B" },
+  { id:"arequipe", name:"Arequipe",         color:"#C17A3D" },
+];
+
+const TOPPINGS_INCLUIDOS = [
+  "Maní","Oreo triturado","Chispitas de colores","Masmelos",
+  "Almendras","Perlitas blancas","Leche condensada","Salsa de mora","Coco rayado"
+];
+
+const TOPPINGS_ADICIONALES = [
+  "Gomitas ácidas","Gomitas de mora","M&M",
+  "Barquillos","Kiwi","Fresa","Arándanos"
+];
+const TOPPING_EXTRA_PRICE = 1000; // por topping adicional seleccionado (aplica para 3 donitas)
+
+/* ================= ESTADO ================= */
+const state = {
+  presentacion: null,
+  sabores: [],
+  toppingsIncl: [],
+  toppingsExtra: [],
+};
+
+const fmt = (n) => "$" + n.toLocaleString("es-CO");
+const TOTAL_STEPS = 5;
+
+/* ================= NAVEGACIÓN ENTRE PANTALLAS ================= */
+const STEP_IDS = { qty:1, sabores:2, toppings:3, toppingsExtra:4, entrega:5 };
+
+function goTo(name){
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById("screen-" + name).classList.add("active");
+  window.scrollTo(0,0);
+  renderProgress(name);
+  updateActionBar(name);
+  if (name === "entrega") { renderZona(); updateSummary(); }
+}
+
+function renderProgress(name){
+  const current = STEP_IDS[name];
+  document.querySelectorAll(".progress-dots").forEach(bar => {
+    bar.innerHTML = "";
+    for (let i=1; i<=TOTAL_STEPS; i++){
+      const dot = document.createElement("span");
+      if (current){
+        if (i < current) dot.className = "done";
+        else if (i === current) dot.className = "current";
+      }
+      bar.appendChild(dot);
+    }
+  });
+}
+
+/* ================= BARRA DE ACCIÓN (Continuar / Enviar) ================= */
+const actionBar = document.getElementById("actionBar");
+const actionBtn = document.getElementById("actionBtn");
+
+function updateActionBar(name){
+  if (name === "hero"){
+    actionBar.style.display = "none";
+    return;
+  }
+  actionBar.style.display = "flex";
+
+  if (name === "qty"){
+    actionBtn.textContent = "Continuar";
+    actionBtn.disabled = !state.presentacion;
+    actionBtn.onclick = () => goTo("sabores");
+  } else if (name === "sabores"){
+    actionBtn.textContent = "Continuar";
+    actionBtn.disabled = state.sabores.length < 1;
+    actionBtn.onclick = () => goTo("toppings");
+  } else if (name === "toppings"){
+    actionBtn.textContent = "Continuar";
+    actionBtn.disabled = false;
+    actionBtn.onclick = () => goTo("toppingsExtra");
+  } else if (name === "toppingsExtra"){
+    actionBtn.textContent = "Continuar";
+    actionBtn.disabled = false;
+    actionBtn.onclick = () => goTo("entrega");
+  } else if (name === "entrega"){
+    actionBtn.textContent = "Enviar pedido por WhatsApp";
+    actionBtn.disabled = false;
+    actionBtn.onclick = enviarPedido;
+  }
+}
+
+/* ================= PASO 1: CANTIDAD ================= */
+const qtyGrid = document.getElementById("qtyGrid");
+PRESENTACIONES.forEach((p) => {
+  const card = document.createElement("label");
+  card.className = "qty-card";
+  card.innerHTML = `
+    <input type="radio" name="qty" value="${p.cant}">
+    <div class="n">${p.cant}</div>
+    <div class="lbl">donas</div>
+    <div class="price">${fmt(p.price)}</div>
+  `;
+  card.querySelector("input").addEventListener("change", () => {
+    state.presentacion = p;
+    state.sabores = [];
+    state.toppingsIncl = [];
+    document.querySelectorAll(".qty-card").forEach(c => c.classList.remove("selected"));
+    card.classList.add("selected");
+    renderSabores();
+    renderToppingsIncluidos();
+    updateActionBar("qty");
+  });
+  qtyGrid.appendChild(card);
+});
+
+/* ================= PASO 2: SABORES ================= */
+function renderSabores(){
+  const grid = document.getElementById("saboresGrid");
+  grid.innerHTML = "";
+  const max = state.presentacion ? state.presentacion.maxSelect : 0;
+
+  SABORES.forEach((s) => {
+    const opt = document.createElement("label");
+    opt.className = "opt";
+    opt.innerHTML = `
+      <input type="checkbox" value="${s.id}">
+      <span class="dot" style="background:${s.color}"></span>
+      ${s.name}
+    `;
+    const input = opt.querySelector("input");
+    input.addEventListener("change", () => {
+      if (input.checked){
+        if (state.sabores.length >= max){ input.checked = false; return; }
+        state.sabores.push(s.id);
+        opt.classList.add("selected");
+      } else {
+        state.sabores = state.sabores.filter(f => f !== s.id);
+        opt.classList.remove("selected");
+      }
+      renderSaboresLock();
+      updateSaboresCounter();
+      updateActionBar("sabores");
+    });
+    grid.appendChild(opt);
+  });
+  updateSaboresCounter();
+}
+
+function renderSaboresLock(){
+  const max = state.presentacion ? state.presentacion.maxSelect : 0;
+  document.querySelectorAll("#saboresGrid .opt").forEach(opt => {
+    const input = opt.querySelector("input");
+    if (!input.checked && state.sabores.length >= max){
+      opt.classList.add("disabled");
+    } else {
+      opt.classList.remove("disabled");
+    }
+  });
+}
+
+function updateSaboresCounter(){
+  const max = state.presentacion ? state.presentacion.maxSelect : 0;
+  document.getElementById("saboresCounter").textContent =
+    `${state.sabores.length} de ${max} sabores seleccionados (mínimo 1)`;
+}
+
+/* ================= PASO 3: TOPPINGS INCLUIDOS ================= */
+function renderToppingsIncluidos(){
+  const grid = document.getElementById("toppingsGrid");
+  grid.innerHTML = "";
+  const max = state.presentacion ? state.presentacion.maxSelect : 0;
+
+  TOPPINGS_INCLUIDOS.forEach((name) => {
+    const opt = document.createElement("label");
+    opt.className = "opt";
+    opt.innerHTML = `<input type="checkbox" value="${name}">${name}`;
+    const input = opt.querySelector("input");
+    input.addEventListener("change", () => {
+      if (input.checked){
+        if (state.toppingsIncl.length >= max){ input.checked = false; return; }
+        state.toppingsIncl.push(name);
+        opt.classList.add("selected");
+      } else {
+        state.toppingsIncl = state.toppingsIncl.filter(t => t !== name);
+        opt.classList.remove("selected");
+      }
+      renderToppingsLock();
+      updateToppingsCounter();
+    });
+    grid.appendChild(opt);
+  });
+  updateToppingsCounter();
+}
+
+function renderToppingsLock(){
+  const max = state.presentacion ? state.presentacion.maxSelect : 0;
+  document.querySelectorAll("#toppingsGrid .opt").forEach(opt => {
+    const input = opt.querySelector("input");
+    if (!input.checked && state.toppingsIncl.length >= max){
+      opt.classList.add("disabled");
+    } else {
+      opt.classList.remove("disabled");
+    }
+  });
+}
+
+function updateToppingsCounter(){
+  const max = state.presentacion ? state.presentacion.maxSelect : 0;
+  document.getElementById("toppingsCounter").textContent =
+    `${state.toppingsIncl.length} de ${max} toppings seleccionados`;
+}
+
+/* ================= PASO 4: TOPPINGS ADICIONALES ================= */
+const toppingsExtraGrid = document.getElementById("toppingsExtraGrid");
+TOPPINGS_ADICIONALES.forEach((name) => {
+  const opt = document.createElement("label");
+  opt.className = "opt";
+  opt.innerHTML = `<input type="checkbox" value="${name}">${name}<span class="price-tag">+${fmt(TOPPING_EXTRA_PRICE)}</span>`;
+  const input = opt.querySelector("input");
+  input.addEventListener("change", () => {
+    if (input.checked){
+      state.toppingsExtra.push(name);
+      opt.classList.add("selected");
+    } else {
+      state.toppingsExtra = state.toppingsExtra.filter(t => t !== name);
+      opt.classList.remove("selected");
+    }
+  });
+  toppingsExtraGrid.appendChild(opt);
+});
+
+/* ================= PASO 5: ENTREGA + RESUMEN ================= */
+function renderZona(){
+  document.getElementById("zonaNota").textContent = "📍 " + ZONA_COBERTURA;
+}
+
+function calcTotal(){
+  if (!state.presentacion) return 0;
+  return state.presentacion.price + (state.toppingsExtra.length * TOPPING_EXTRA_PRICE);
+}
+
+function updateSummary(){
+  const body = document.getElementById("summaryBody");
+  if (!state.presentacion){ body.innerHTML = ""; return; }
+
+  const saborNames = state.sabores.map(id => SABORES.find(s => s.id === id)?.name).join(", ");
+  const total = calcTotal();
+
+  let html = "";
+  html += line(`Caja de ${state.presentacion.cant} donas`, fmt(state.presentacion.price));
+  if (saborNames) html += line("Sabores", saborNames);
+  if (state.toppingsIncl.length) html += line("Toppings incluidos", state.toppingsIncl.join(", "));
+  if (state.toppingsExtra.length) html += line(`Toppings adicionales (${state.toppingsExtra.length})`, fmt(state.toppingsExtra.length * TOPPING_EXTRA_PRICE));
+  html += `<div class="summary-line total"><span>Total</span><span>${fmt(total)}</span></div>`;
+
+  body.innerHTML = html;
+}
+function line(label, value){
+  return `<div class="summary-line"><span>${label}</span><span>${value}</span></div>`;
+}
+
+/* ================= ENVÍO POR WHATSAPP ================= */
+function enviarPedido(){
+  const nombre = document.getElementById("nombre").value.trim();
+  const telefono = document.getElementById("telefono").value.trim();
+  const direccion = document.getElementById("direccion").value.trim();
+  const fecha = document.getElementById("fecha").value.trim();
+  const errorMsg = document.getElementById("errorMsg");
+
+  if (!state.presentacion || !nombre || !telefono || !direccion){
+    errorMsg.style.display = "block";
+    return;
+  }
+  errorMsg.style.display = "none";
+
+  const saborNames = state.sabores.map(id => SABORES.find(s => s.id === id)?.name).join(", ");
+  const total = calcTotal();
+
+  let msg = `¡Hola Donitas de Su Gracia! 🍩 Quiero hacer este pedido:\n\n`;
+  msg += `📦 Caja de ${state.presentacion.cant} donas — ${fmt(state.presentacion.price)}\n`;
+  if (saborNames) msg += `🎨 Sabores: ${saborNames}\n`;
+  if (state.toppingsIncl.length) msg += `🍬 Toppings incluidos: ${state.toppingsIncl.join(", ")}\n`;
+  if (state.toppingsExtra.length) msg += `✨ Toppings adicionales: ${state.toppingsExtra.join(", ")} (+${fmt(state.toppingsExtra.length * TOPPING_EXTRA_PRICE)})\n`;
+  msg += `\n💰 Total: ${fmt(total)}\n\n`;
+  msg += `👤 Nombre: ${nombre}\n📞 Teléfono: ${telefono}\n📍 Dirección: ${direccion}\n`;
+  if (fecha) msg += `📅 Fecha deseada: ${fecha}\n`;
+
+  const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
+  window.open(url, "_blank");
+}
+</script>
+</body>
+</html>
