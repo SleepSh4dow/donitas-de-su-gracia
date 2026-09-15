@@ -465,35 +465,55 @@ label.field:first-child{ margin-top:0; }
   </div>
 </section>
 
-<!-- ============ PANTALLA FRESAS CON CREMA ============ -->
+<!-- ============ PANTALLA FRESAS CON CREMA: elige presentación y cantidad ============ -->
 <section class="screen" id="screen-fresas">
   <div class="wizard-card">
     <div class="progress-dots" data-progress="2"></div>
     <button class="back-link" onclick="goTo('hub')">← Atrás</button>
     <div class="wizard-head">
       <h2>Fresas con crema 🍓</h2>
-      <p>Elige tu presentación, agrega toppings si quieres (+$2.000 c/u) y la cantidad.</p>
+      <p>Elige tu presentación.</p>
     </div>
+
+    <div class="combo-list" id="fresasList"></div>
 
     <div class="combo-form">
       <label class="field">Presentación</label>
       <div class="qty-grid" id="fresasProductGrid" style="grid-template-columns:1fr;"></div>
+    </div>
+  </div>
+</section>
 
-      <label class="field">Toppings (opcional)</label>
-      <div class="opt-grid" id="fresasToppingsGrid"></div>
-
-      <label class="field">Cantidad</label>
-      <div class="qty-stepper">
-        <button type="button" id="fresasMinus" onclick="stepFresas(-1)">−</button>
-        <input type="number" class="qty-value-input" id="fresasQtyValue" value="1" min="1" step="1" inputmode="numeric">
-        <button type="button" id="fresasPlus" onclick="stepFresas(1)">+</button>
-      </div>
-
-      <button class="add-combo-btn" id="addFresasBtn" onclick="addFresasItem()" disabled>+ Agregar a mi pedido</button>
-      <p class="combo-error" id="fresasError"></p>
+<!-- ============ PANTALLA FRESAS: salsa y toppings incluidos ============ -->
+<section class="screen" id="screen-fresasDetalle">
+  <div class="wizard-card">
+    <div class="progress-dots" data-progress="3"></div>
+    <button class="back-link" onclick="goTo('fresas')">← Atrás</button>
+    <div class="wizard-head">
+      <h2>Elige salsa y topping</h2>
+      <p id="fresasDetalleSubtitle">Selecciona la salsa y el/los topping(s) incluidos.</p>
     </div>
 
-    <div class="combo-list" id="fresasList"></div>
+    <label class="field">Salsa</label>
+    <div class="opt-grid" id="fresasSalsaGrid"></div>
+
+    <label class="field" id="fresasToppingsIncLabel"></label>
+    <div class="opt-grid" id="fresasToppingsIncGrid"></div>
+
+    <p class="combo-error" id="fresasDetalleError"></p>
+  </div>
+</section>
+
+<!-- ============ PANTALLA FRESAS: adicionales con costo extra ============ -->
+<section class="screen" id="screen-fresasAdicionales">
+  <div class="wizard-card">
+    <div class="progress-dots" data-progress="4"></div>
+    <button class="back-link" onclick="goTo('fresasDetalle')">← Atrás</button>
+    <div class="wizard-head">
+      <h2>Adicionales</h2>
+      <p>Ingredientes extra. Elige los que quieras (costo adicional).</p>
+    </div>
+    <div class="opt-grid" id="fresasToppingsGrid"></div>
   </div>
 </section>
 
@@ -612,22 +632,49 @@ const TOPPING_EXTRA_PRICE = 1000; // por topping adicional seleccionado (aplica 
 
 /* ---------- Fresas con crema (módulo independiente) ---------- */
 const FRESAS_PRODUCTOS = [
-  { id:"chantilly", name:"Crema con Chantilly y Fresas", price: 15000 },
-  { id:"chocolate", name:"Crema con Chocolate y Fresas", price: 15000 },
-  { id:"completa", name:"Crema con Chantilly, Chocolate, Bolas de Chocolate y Fresas", price: 23000 },
+  {
+    id: "deluxe",
+    name: "Fresas Deluxe",
+    price: 18000,
+    incluye: "Incluye: fresas, crema chantilly, un topping y una salsa",
+    toppingsIncluidos: 1,
+  },
+  {
+    id: "bowl",
+    name: "Bowl de Fresas",
+    price: 23500,
+    incluye: "Incluye: fresas, crema chantilly, una salsa, dos toppings y donitas",
+    toppingsIncluidos: 2,
+  },
 ];
-const FRESAS_TOPPINGS = ["Oreo","Mango","Barquillos","M&M","Arándanos","Kiwi","Mora Azul","Durazno"];
-const FRESAS_TOPPING_PRICE = 2000; // por topping, se multiplica por la cantidad de unidades del producto
+
+// Salsa: se elige 1, sin costo adicional
+const FRESAS_SALSAS = ["Mora","Arequipe","Chocolate"];
+
+// Toppings incluidos (sin costo adicional): se elige la cantidad que indique "toppingsIncluidos" del producto
+const FRESAS_TOPPINGS_INCLUIDOS = ["Oreo","Maní","Almendras"];
+
+// Adicionales con costo extra (mismo listado para ambos productos)
+const FRESAS_ADICIONALES = [
+  { name:"Oreo",       price: 2000 },
+  { name:"Mango",      price: 2000 },
+  { name:"Barquillos", price: 2000 },
+  { name:"M&M",        price: 2000 },
+  { name:"Arándanos",  price: 2000 },
+  { name:"Kiwi",       price: 2000 },
+  { name:"Mora Azul",  price: 2000 },
+  { name:"Durazno",    price: 2000 },
+  { name:"Frambuesas", price: 3000 },
+];
 
 /* ================= ESTADO ================= */
 const state = {
   cart: [],                                                    // [{ presentacion, combos:[...], toppings:[...] }, ...]
   currentBox: { presentacion: null, combos: [], toppings: [] }, // caja que se está armando ahora mismo
-  fresasCart: [],                                               // [{ producto, toppings:[...], cantidad }, ...]
-  currentFresas: { producto: null, toppings: [] },               // ítem de fresas que se está armando ahora mismo
+  fresasCart: [],                                               // [{ producto, salsa, toppings:[...], adicionales:[...], cantidad }, ...]
+  currentFresas: { producto: null, salsa: null, toppings: [], adicionales: [] }, // ítem de fresas que se está armando ahora mismo
 };
 let comboQty = 1;
-let fresasQty = 1;
 
 const fmt = (n) => "$" + n.toLocaleString("es-CO");
 const MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
@@ -642,7 +689,11 @@ function distinctToppings(){ return new Set(state.currentBox.combos.map(c => c.t
 function remaining(){ return state.currentBox.presentacion ? state.currentBox.presentacion.cant - totalAsignado() : 0; }
 function boxComplete(){ return !!state.currentBox.presentacion && totalAsignado() === state.currentBox.presentacion.cant; }
 
-function fresasItemTotal(item){ return item.cantidad * (item.producto.price + item.toppings.length * FRESAS_TOPPING_PRICE); }
+function fresasAdicionalesCost(item){ return item.adicionales.reduce((s, name) => {
+  const a = FRESAS_ADICIONALES.find(x => x.name === name);
+  return s + (a ? a.price : 0);
+}, 0); }
+function fresasItemTotal(item){ return item.cantidad * (item.producto.price + fresasAdicionalesCost(item)); }
 function fresasCartTotal(){ return state.fresasCart.reduce((s, item) => s + fresasItemTotal(item), 0); }
 function boxToppingsCost(box){ return (box.toppings ? box.toppings.length : 0) * TOPPING_EXTRA_PRICE; }
 function boxTotal(box){ return box.presentacion.price + boxToppingsCost(box); }
@@ -651,7 +702,7 @@ function hasAnyOrder(){ return state.cart.length > 0 || state.fresasCart.length 
 const TOTAL_STEPS = 5;
 
 /* ================= NAVEGACIÓN ENTRE PANTALLAS ================= */
-const STEP_IDS = { hub:1, qty:2, combo:3, fresas:2, toppingsExtra:4, entrega:5 };
+const STEP_IDS = { hub:1, qty:2, combo:3, fresas:2, fresasDetalle:3, fresasAdicionales:4, toppingsExtra:4, entrega:5 };
 
 function goTo(name){
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
@@ -662,7 +713,9 @@ function goTo(name){
   if (name === "hub") { renderHub(); }
   if (name === "qty") { renderCartUI(); }
   if (name === "combo") { renderComboIntro(); renderComboList(); updateStepperUI(); }
-  if (name === "fresas") { renderFresasList(); updateFresasStepperUI(); updateFresasButtons(); }
+  if (name === "fresas") { renderFresasList(); syncFresasProductUI(); }
+  if (name === "fresasDetalle") { syncFresasDetalleUI(); }
+  if (name === "fresasAdicionales") { syncFresasAdicionalesUI(); }
   if (name === "toppingsExtra") { renderToppingsExtraScreen(); }
   if (name === "entrega") { renderZona(); updateSummary(); }
 }
@@ -706,9 +759,17 @@ function updateActionBar(name){
     actionBtn.disabled = !boxComplete();
     actionBtn.onclick = () => goTo("toppingsExtra");
   } else if (name === "fresas"){
-    actionBtn.textContent = "Volver a mi pedido";
+    actionBtn.textContent = "Continuar";
+    actionBtn.disabled = !state.currentFresas.producto;
+    actionBtn.onclick = () => goTo("fresasDetalle");
+  } else if (name === "fresasDetalle"){
+    actionBtn.textContent = "Continuar";
+    actionBtn.disabled = !fresasDetalleComplete();
+    actionBtn.onclick = () => goTo("fresasAdicionales");
+  } else if (name === "fresasAdicionales"){
+    actionBtn.textContent = "Agregar a mi pedido";
     actionBtn.disabled = false;
-    actionBtn.onclick = () => goTo("hub");
+    actionBtn.onclick = () => { addFresasItem(); goTo("hub"); };
   } else if (name === "toppingsExtra"){
     actionBtn.textContent = "Continuar";
     actionBtn.disabled = false;
@@ -802,7 +863,7 @@ function renderHub(){
     const row = document.createElement("div");
     row.className = "combo-row";
     row.innerHTML = `
-      <span class="txt">🍓 <b>${item.cantidad}</b> × ${item.producto.name}${item.toppings.length ? " + " + item.toppings.join(", ") : ""} — ${fmt(fresasItemTotal(item))}</span>
+      <span class="txt">🍓 <b>${item.cantidad}</b> × ${fresasItemDescLine(item)} — ${fmt(fresasItemTotal(item))}</span>
       <button class="remove-btn" onclick="removeFresasItem(${i})">✕</button>
     `;
     list.appendChild(row);
@@ -965,6 +1026,8 @@ function renderComboList(){
 }
 
 /* ================= FRESAS CON CREMA (módulo independiente) ================= */
+
+/* --- Pantalla 1: elegir presentación y cantidad --- */
 const fresasProductGrid = document.getElementById("fresasProductGrid");
 FRESAS_PRODUCTOS.forEach((p) => {
   const card = document.createElement("label");
@@ -974,106 +1037,190 @@ FRESAS_PRODUCTOS.forEach((p) => {
     <input type="radio" name="fresasProducto" value="${p.id}">
     <div class="lbl" style="font-family:'Playfair Display', serif; font-size:1rem; font-weight:700; color:var(--cocoa); text-transform:none; letter-spacing:0; line-height:1.3;">${p.name}</div>
     <div class="price">${fmt(p.price)}</div>
+    <div style="margin-top:6px; font-size:0.72rem; color:var(--cocoa-soft); text-transform:none; letter-spacing:0; line-height:1.3;">${p.incluye}</div>
   `;
   card.querySelector("input").addEventListener("change", () => {
     state.currentFresas.producto = p;
+    state.currentFresas.salsa = null;
+    state.currentFresas.toppings = [];
     document.querySelectorAll('#fresasProductGrid .qty-card').forEach(c => c.classList.remove("selected"));
     card.classList.add("selected");
-    updateFresasButtons();
+    updateActionBar("fresas");
   });
   fresasProductGrid.appendChild(card);
 });
 
+function syncFresasProductUI(){
+  const cf = state.currentFresas;
+  document.querySelectorAll('#fresasProductGrid input[name="fresasProducto"]').forEach(r => r.checked = false);
+  document.querySelectorAll('#fresasProductGrid .qty-card').forEach(c => c.classList.remove("selected"));
+  if (cf.producto){
+    const radio = document.querySelector(`#fresasProductGrid input[value="${cf.producto.id}"]`);
+    if (radio){
+      radio.checked = true;
+      radio.closest(".qty-card").classList.add("selected");
+    }
+  }
+}
+
+/* --- Pantalla 2: salsa + toppings incluidos --- */
+function renderFresasSalsaGrid(){
+  const grid = document.getElementById("fresasSalsaGrid");
+  grid.innerHTML = "";
+  FRESAS_SALSAS.forEach((name) => {
+    const opt = document.createElement("label");
+    opt.className = "opt";
+    opt.innerHTML = `<input type="radio" name="fresasSalsa" value="${name}"><span class="opt-content"><span class="opt-name">${name}</span></span>`;
+    const input = opt.querySelector("input");
+    input.addEventListener("change", () => {
+      state.currentFresas.salsa = name;
+      document.querySelectorAll('#fresasSalsaGrid .opt').forEach(o => o.classList.remove("selected"));
+      opt.classList.add("selected");
+      clearFresasDetalleError();
+      updateActionBar("fresasDetalle");
+    });
+    grid.appendChild(opt);
+  });
+}
+
+function renderFresasToppingsIncGrid(){
+  const grid = document.getElementById("fresasToppingsIncGrid");
+  grid.innerHTML = "";
+  const p = state.currentFresas.producto;
+  const label = document.getElementById("fresasToppingsIncLabel");
+  if (!p) return;
+  label.textContent = p.toppingsIncluidos === 1 ? "Topping incluido (elige 1)" : `Toppings incluidos (elige ${p.toppingsIncluidos})`;
+  FRESAS_TOPPINGS_INCLUIDOS.forEach((name) => {
+    const opt = document.createElement("label");
+    opt.className = "opt";
+    opt.innerHTML = `<input type="checkbox" value="${name}"><span class="opt-content"><span class="opt-name">${name}</span></span>`;
+    const input = opt.querySelector("input");
+    input.addEventListener("change", () => {
+      const max = state.currentFresas.producto ? state.currentFresas.producto.toppingsIncluidos : 1;
+      if (input.checked){
+        if (state.currentFresas.toppings.length >= max){
+          input.checked = false;
+          showFresasDetalleError(max === 1 ? "Solo puedes elegir 1 topping incluido." : `Solo puedes elegir ${max} toppings incluidos.`);
+          return;
+        }
+        clearFresasDetalleError();
+        state.currentFresas.toppings.push(name);
+        opt.classList.add("selected");
+      } else {
+        state.currentFresas.toppings = state.currentFresas.toppings.filter(t => t !== name);
+        opt.classList.remove("selected");
+      }
+      syncFresasToppingsIncDisabled();
+      updateActionBar("fresasDetalle");
+    });
+    grid.appendChild(opt);
+  });
+}
+function syncFresasToppingsIncDisabled(){
+  const max = state.currentFresas.producto ? state.currentFresas.producto.toppingsIncluidos : 1;
+  const full = state.currentFresas.toppings.length >= max;
+  document.querySelectorAll('#fresasToppingsIncGrid .opt').forEach((opt) => {
+    const input = opt.querySelector("input");
+    if (!input.checked){
+      opt.classList.toggle("disabled", full);
+      input.disabled = full;
+    }
+  });
+}
+
+function showFresasDetalleError(text){
+  const el = document.getElementById("fresasDetalleError");
+  el.textContent = text;
+  el.style.display = "block";
+}
+function clearFresasDetalleError(){
+  document.getElementById("fresasDetalleError").style.display = "none";
+}
+
+function fresasDetalleComplete(){
+  const cf = state.currentFresas;
+  if (!cf.producto) return false;
+  if (!cf.salsa) return false;
+  if (cf.toppings.length !== cf.producto.toppingsIncluidos) return false;
+  return true;
+}
+
+function syncFresasDetalleUI(){
+  const cf = state.currentFresas;
+  const subtitle = document.getElementById("fresasDetalleSubtitle");
+  if (cf.producto) subtitle.textContent = `Para tu ${cf.producto.name}: elige la salsa y el/los topping(s) incluidos.`;
+
+  renderFresasSalsaGrid();
+  renderFresasToppingsIncGrid();
+
+  if (cf.salsa){
+    const salsaInput = document.querySelector(`#fresasSalsaGrid input[value="${cf.salsa}"]`);
+    if (salsaInput){
+      salsaInput.checked = true;
+      salsaInput.closest(".opt").classList.add("selected");
+    }
+  }
+  document.querySelectorAll('#fresasToppingsIncGrid .opt').forEach((opt) => {
+    const input = opt.querySelector("input");
+    const checked = cf.toppings.includes(input.value);
+    input.checked = checked;
+    opt.classList.toggle("selected", checked);
+  });
+  syncFresasToppingsIncDisabled();
+  clearFresasDetalleError();
+}
+
+/* --- Pantalla 3: adicionales con costo extra --- */
 const fresasToppingsGrid = document.getElementById("fresasToppingsGrid");
-FRESAS_TOPPINGS.forEach((name) => {
+FRESAS_ADICIONALES.forEach((a) => {
   const opt = document.createElement("label");
   opt.className = "opt";
-  opt.innerHTML = `<input type="checkbox" value="${name}"><span class="opt-content"><span class="opt-name">${name}</span><span class="price-tag">+${fmt(FRESAS_TOPPING_PRICE)}</span></span>`;
+  opt.innerHTML = `<input type="checkbox" value="${a.name}"><span class="opt-content"><span class="opt-name">${a.name}</span><span class="price-tag">+${fmt(a.price)}</span></span>`;
   const input = opt.querySelector("input");
   input.addEventListener("change", () => {
     if (input.checked){
-      state.currentFresas.toppings.push(name);
+      state.currentFresas.adicionales.push(a.name);
       opt.classList.add("selected");
     } else {
-      state.currentFresas.toppings = state.currentFresas.toppings.filter(t => t !== name);
+      state.currentFresas.adicionales = state.currentFresas.adicionales.filter(t => t !== a.name);
       opt.classList.remove("selected");
     }
   });
   fresasToppingsGrid.appendChild(opt);
 });
 
-const fresasQtyInput = document.getElementById("fresasQtyValue");
-fresasQtyInput.addEventListener("input", () => {
-  fresasQtyInput.value = fresasQtyInput.value.replace(/[^0-9]/g, "");
-});
-fresasQtyInput.addEventListener("change", setFresasQtyFromInput);
-fresasQtyInput.addEventListener("blur", setFresasQtyFromInput);
-
-function stepFresas(delta){
-  let next = fresasQty + delta;
-  if (next < 1) next = 1;
-  if (next > 50) next = 50;
-  fresasQty = next;
-  updateFresasStepperUI();
+function syncFresasAdicionalesUI(){
+  const cf = state.currentFresas;
+  document.querySelectorAll('#fresasToppingsGrid .opt').forEach((opt) => {
+    const input = opt.querySelector("input");
+    const checked = cf.adicionales.includes(input.value);
+    input.checked = checked;
+    opt.classList.toggle("selected", checked);
+  });
 }
 
-function updateFresasStepperUI(){
-  const input = document.getElementById("fresasQtyValue");
-  input.value = fresasQty;
-  input.min = "1";
-  document.getElementById("fresasMinus").disabled = fresasQty <= 1;
-  document.getElementById("fresasPlus").disabled = fresasQty >= 50;
-}
-
-function setFresasQtyFromInput(){
-  const input = document.getElementById("fresasQtyValue");
-  let val = parseInt(input.value, 10);
-  if (isNaN(val) || val < 1) val = 1;
-  if (val > 50) val = 50;
-  fresasQty = val;
-  updateFresasStepperUI();
-}
-
-function updateFresasButtons(){
-  document.getElementById("addFresasBtn").disabled = !state.currentFresas.producto;
-}
-
-function showFresasError(text){
-  const el = document.getElementById("fresasError");
-  el.textContent = text;
-  el.style.display = "block";
-}
-function clearFresasError(){
-  document.getElementById("fresasError").style.display = "none";
+/* --- Armar y guardar el ítem final --- */
+function fresasItemDescLine(item){
+  const toppingsTxt = item.toppings.length ? item.toppings.join(", ") : "";
+  const adicionalesTxt = item.adicionales.length ? " + adicionales: " + item.adicionales.join(", ") : "";
+  return `${item.producto.name} — salsa: ${item.salsa}, topping${item.toppings.length > 1 ? "s" : ""}: ${toppingsTxt}${adicionalesTxt}`;
 }
 
 function addFresasItem(){
-  if (!state.currentFresas.producto){
-    showFresasError("Elige una presentación de fresas con crema.");
-    return;
-  }
-  clearFresasError();
+  const cf = state.currentFresas;
+  if (!fresasDetalleComplete()) return; // no debería pasar: la barra de acción ya lo exige
 
   const item = {
-    producto: state.currentFresas.producto,
-    toppings: [...state.currentFresas.toppings],
-    cantidad: fresasQty,
+    producto: cf.producto,
+    salsa: cf.salsa,
+    toppings: [...cf.toppings],
+    adicionales: [...cf.adicionales],
+    cantidad: 1,
   };
   state.fresasCart.push(item);
 
-  // reiniciar el formulario para poder agregar otro producto
-  state.currentFresas = { producto: null, toppings: [] };
-  fresasQty = 1;
-  document.querySelectorAll('#fresasProductGrid .qty-card').forEach(c => c.classList.remove("selected"));
-  document.querySelectorAll('#fresasProductGrid input[name="fresasProducto"]').forEach(r => r.checked = false);
-  document.querySelectorAll('#fresasToppingsGrid .opt').forEach(o => {
-    o.classList.remove("selected");
-    o.querySelector("input").checked = false;
-  });
-
-  updateFresasStepperUI();
-  updateFresasButtons();
-  renderFresasList();
+  // reiniciar el formulario para poder agregar otro producto la próxima vez
+  state.currentFresas = { producto: null, salsa: null, toppings: [], adicionales: [] };
 }
 
 function removeFresasItemFromForm(index){
@@ -1094,7 +1241,7 @@ function renderFresasList(){
     const row = document.createElement("div");
     row.className = "combo-row";
     row.innerHTML = `
-      <span class="txt"><b>${item.cantidad}</b> × ${item.producto.name}${item.toppings.length ? " + " + item.toppings.join(", ") : ""} — ${fmt(fresasItemTotal(item))}</span>
+      <span class="txt"><b>${item.cantidad}</b> × ${fresasItemDescLine(item)} — ${fmt(fresasItemTotal(item))}</span>
       <button class="remove-btn" onclick="removeFresasItemFromForm(${i})">✕</button>
     `;
     list.appendChild(row);
@@ -1164,7 +1311,9 @@ function updateSummary(){
 
   state.fresasCart.forEach((item) => {
     html += line(`🍓 ${item.cantidad} × ${item.producto.name}`, fmt(fresasItemTotal(item)));
-    if (item.toppings.length) html += line(`&nbsp;&nbsp;Toppings: ${item.toppings.join(", ")}`, `+${fmt(item.toppings.length * FRESAS_TOPPING_PRICE)} c/u`);
+    html += line(`&nbsp;&nbsp;Salsa: ${item.salsa}`, "");
+    html += line(`&nbsp;&nbsp;Topping${item.toppings.length > 1 ? "s" : ""}: ${item.toppings.join(", ")}`, "");
+    if (item.adicionales.length) html += line(`&nbsp;&nbsp;Adicionales: ${item.adicionales.join(", ")}`, `+${fmt(fresasAdicionalesCost(item))} c/u`);
   });
 
   html += `<div class="summary-line total"><span>Total</span><span>${fmt(total)}</span></div>`;
@@ -1204,7 +1353,7 @@ function enviarPedido(){
   if (state.fresasCart.length){
     msg += `\n🍓 Fresas con crema:\n`;
     state.fresasCart.forEach((item) => {
-      msg += `   • ${item.cantidad} × ${item.producto.name}${item.toppings.length ? " + " + item.toppings.join(", ") : ""} — ${fmt(fresasItemTotal(item))}\n`;
+      msg += `   • ${item.cantidad} × ${fresasItemDescLine(item)} — ${fmt(fresasItemTotal(item))}\n`;
     });
   }
 
